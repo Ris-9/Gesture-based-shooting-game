@@ -25,6 +25,9 @@ class UIManager {
     const healthPct = Math.max(0, game.playerHealth / game.maxHealth * 100);
     document.getElementById('health-bar-fill').style.width = healthPct + '%';
 
+    // Update grenade UI
+    this.updateGrenadeUI(game.currentFloor, game.grenadeCount);
+
     // Update weapon name based on damage level
     const dmg = game.weaponDamage;
     let weaponName = 'PISTOL';
@@ -78,6 +81,37 @@ class UIManager {
       this.hitEffects.appendChild(spark);
       setTimeout(() => spark.remove(), 400);
     }
+  }
+
+  updateGrenadeUI(floor, grenadeCount) {
+    const indicator = document.getElementById('grenade-indicator');
+    if (!indicator) return;
+    if (floor >= 1) {
+      indicator.classList.remove('hidden');
+      indicator.style.display = 'flex';
+      document.getElementById('grenade-num').textContent = grenadeCount;
+      indicator.classList.toggle('empty', grenadeCount <= 0);
+    } else {
+      indicator.classList.add('hidden');
+      indicator.style.display = 'none';
+    }
+  }
+
+  showGrenadeEffect(x, y) {
+    // Explosion ring particles
+    for (let i = 0; i < 14; i++) {
+      const spark = document.createElement('div');
+      spark.className = 'hit-spark grenade-explosion';
+      const angle = (i / 14) * Math.PI * 2;
+      const dist = 25 + Math.random() * 50;
+      spark.style.left = (x + Math.cos(angle) * dist) + 'px';
+      spark.style.top = (y + Math.sin(angle) * dist) + 'px';
+      this.hitEffects.appendChild(spark);
+      setTimeout(() => spark.remove(), 700);
+    }
+    // Orange screen flash
+    this.gameContainer.classList.add('grenade-flash');
+    setTimeout(() => this.gameContainer.classList.remove('grenade-flash'), 180);
   }
 
   pulseCombo() {
