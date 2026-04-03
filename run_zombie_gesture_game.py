@@ -30,6 +30,7 @@ class GestureBridge:
             "aimX": 0.5,
             "aimY": 0.5,
             "shotSequence": 0,
+            "grenadeSequence": 0,
             "gestureName": None,
             "timestamp": time.time(),
         }
@@ -52,6 +53,13 @@ class GestureBridge:
         self._shoot_detection_history = []  # Store last few detection results
         self._shoot_history_size = 3  # Reduced from 5 for faster response
         self._shoot_confidence_threshold = 0.5  # Reduced from 0.6 for faster triggering
+
+        # Grenade gesture state
+        self._grenade_holding = False
+        self._fist_frame_count = 0
+        self._open_frame_count = 0
+        self._last_grenade_time = 0.0
+        self.grenade_cooldown = 3.0  # seconds between grenade throws
 
     def start(self):
         self._tracker = HandTracker(
@@ -142,14 +150,47 @@ class GestureBridge:
 
             self._last_shoot_active = shoot_active
 
+            # Grenade gesture detection (fist = hold, open hand = throw)
+            fist_active = False
+            open_active = False
+            if input_data and input_data.get("gestures"):
+                actions = input_data["gestures"][0].get("actions", [])
+                fist_active = any(action.type == ActionType.HOLD for action in actions)
+                open_active = any(action.type == ActionType.THROW for action in actions)
+
+            if fist_active:
+                self._fist_frame_count = min(self._fist_frame_count + 1, 10)
+                self._open_frame_count = 0
+            elif open_active:
+                self._open_frame_count = min(self._open_frame_count + 1, 10)
+                self._fist_frame_count = max(0, self._fist_frame_count - 1)
+            else:
+                self._fist_frame_count = max(0, self._fist_frame_count - 2)
+                self._open_frame_count = max(0, self._open_frame_count - 2)
+
+            if self._fist_frame_count >= 3:
+                self._grenade_holding = True
+
+            grenade_thrown = False
+            if self._grenade_holding and self._open_frame_count >= 2 and (now - self._last_grenade_time) >= self.grenade_cooldown:
+                grenade_thrown = True
+                self._last_grenade_time = now
+                self._grenade_holding = False
+                self._fist_frame_count = 0
+                self._open_frame_count = 0
+            elif self._fist_frame_count == 0 and self._open_frame_count == 0:
+                self._grenade_holding = False
+
             with self._lock:
                 self._state["tracking"] = tracking
                 self._state["aimX"] = aim_x
                 self._state["aimY"] = aim_y
-                self._state["gestureName"] = "shoot" if shoot_active else None
+                self._state["gestureName"] = "grenade-hold" if self._grenade_holding else ("shoot" if shoot_active else None)
                 self._state["timestamp"] = now
                 if shot_fired:
                     self._state["shotSequence"] += 1
+                if grenade_thrown:
+                    self._state["grenadeSequence"] += 1
 
             self._draw_debug(frame, aim_x, aim_y, tracking, shoot_active, self._state["shotSequence"])
             time.sleep(0.008)  # Reduced from 0.01 for better responsiveness
