@@ -19,6 +19,7 @@ class InputManager {
     this.gestureTracking = false;
     this.keys = {};
     this.lastGestureShotSequence = 0;
+    this.lastGrenadeSequence = 0;
     this.gesturePollingEnabled = true;
 
     // Mouse events
@@ -88,6 +89,14 @@ class InputManager {
       },
 
       /**
+       * throwGrenade()
+       * Throws a grenade (kills nearest zombie, floor 3+).
+       */
+      throwGrenade() {
+        if (window.game) window.game.throwGrenade();
+      },
+
+      /**
        * setTracking(active)
        * @param {boolean} active - Show/hide gesture tracking indicator
        */
@@ -154,9 +163,20 @@ class InputManager {
             this.lastGestureShotSequence = state.shotSequence;
             window.gestureInput.shoot();
           }
+
+          if ((state.grenadeSequence ?? 0) > this.lastGrenadeSequence) {
+            this.lastGrenadeSequence = state.grenadeSequence;
+            window.gestureInput.throwGrenade();
+          }
+
+          // Switch gun/grenade model based on hold gesture
+          if (window.game) {
+            window.game.setGrenadeHolding(state.gestureName === 'grenade-hold');
+          }
         } else {
           window.gestureInput.setTracking(false);
           this.lastGestureShotSequence = state.shotSequence ?? this.lastGestureShotSequence;
+          if (window.game) window.game.setGrenadeHolding(false);
         }
       } catch (_error) {
         window.gestureInput.setTracking(false);
