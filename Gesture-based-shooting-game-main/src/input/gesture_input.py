@@ -60,6 +60,11 @@ class GestureInput:
         if self._detect_shoot_gesture(landmarks):
             actions.append(Action(ActionType.SHOOT, hand_id=hand_id))
 
+        if self._detect_fist_gesture(landmarks):
+            actions.append(Action(ActionType.HOLD, hand_id=hand_id))
+        elif self._detect_open_hand_gesture(landmarks):
+            actions.append(Action(ActionType.THROW, hand_id=hand_id))
+
         return actions
 
     # -------------------------
@@ -109,6 +114,36 @@ class GestureInput:
         thumb_ext = self._is_thumb_extended_2d(thumb_tip, thumb_ip, thumb_mcp)
 
         return (idx_fwd and mid_fwd and ring_fold and pinky_fold and thumb_ext)
+
+    # -------------------------
+    # GRENADE GESTURES
+    # Fist: all 4 fingers folded toward wrist (hold)
+    # Open hand: all 4 fingers pointing forward (throw)
+    # -------------------------
+    def _detect_fist_gesture(self, lm):
+        """Closed fist - all 4 fingers folded toward wrist."""
+        wrist = lm.landmark[0]
+        index_tip, index_pip = lm.landmark[8], lm.landmark[6]
+        middle_tip, middle_pip = lm.landmark[12], lm.landmark[10]
+        ring_tip, ring_pip = lm.landmark[16], lm.landmark[14]
+        pinky_tip, pinky_pip = lm.landmark[20], lm.landmark[18]
+
+        return (self._is_folded_2d(index_tip, index_pip, wrist) and
+                self._is_folded_2d(middle_tip, middle_pip, wrist) and
+                self._is_folded_2d(ring_tip, ring_pip, wrist) and
+                self._is_folded_2d(pinky_tip, pinky_pip, wrist))
+
+    def _detect_open_hand_gesture(self, lm):
+        """Open hand - all 4 fingers pointing forward (distinct from shoot: ring+pinky also forward)."""
+        index_tip, index_pip = lm.landmark[8], lm.landmark[6]
+        middle_tip, middle_pip = lm.landmark[12], lm.landmark[10]
+        ring_tip, ring_pip = lm.landmark[16], lm.landmark[14]
+        pinky_tip, pinky_pip = lm.landmark[20], lm.landmark[18]
+
+        return (self._is_forward(index_tip, index_pip) and
+                self._is_forward(middle_tip, middle_pip) and
+                self._is_forward(ring_tip, ring_pip) and
+                self._is_forward(pinky_tip, pinky_pip))
 
     # -------------------------
     # CLEANUP (nothing to release — HandTracker owns the camera)
