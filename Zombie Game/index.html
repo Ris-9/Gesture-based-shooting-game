@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Zombie Elevator</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="gameContainer">
+    <div id="debug-error" style="display:none; position:absolute; left:16px; bottom:16px; z-index:9999; max-width:70vw; padding:12px 14px; background:rgba(120,0,0,0.92); color:#fff; font:14px/1.4 monospace; border:1px solid #ff6666; border-radius:8px; white-space:pre-wrap;"></div>
+    <div id="ui-layer">
+      <!-- HUD -->
+      <div id="hud">
+        <div id="hud-left">
+          <div id="floor-indicator">FLOOR <span id="floor-num">1</span></div>
+          <div id="score-display">SCORE: <span id="score-num">0</span></div>
+          <div id="combo-display">COMBO: <span id="combo-num">0</span>x</div>
+        </div>
+        <div id="hud-right">
+          <div id="health-bar-container">
+            <div id="health-bar-label">HP</div>
+            <div id="health-bar-bg"><div id="health-bar-fill"></div></div>
+          </div>
+          <div id="weapon-info">
+            <div id="weapon-name">PISTOL</div>
+            <div id="weapon-damage">DMG: <span id="dmg-num">1</span></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Crosshair -->
+      <div id="crosshair">
+        <div class="cross-h"></div>
+        <div class="cross-v"></div>
+        <div class="cross-dot"></div>
+      </div>
+
+      <!-- Muzzle Flash -->
+      <div id="muzzle-flash"></div>
+
+      <!-- Danger Overlay -->
+      <div id="danger-overlay"></div>
+
+      <!-- Screen Shake Container -->
+      <div id="screen-shake-overlay"></div>
+
+      <!-- Tracking Indicator -->
+      <div id="tracking-indicator">🎯 GESTURE TRACKING</div>
+
+      <!-- Elevator Transition -->
+      <div id="elevator-overlay">
+        <div id="elevator-door-left"></div>
+        <div id="elevator-door-right"></div>
+        <div id="elevator-floor-display">
+          <div id="elevator-arrow">▲</div>
+          <div id="elevator-floor-num">1</div>
+          <div id="elevator-label">FLOOR</div>
+        </div>
+      </div>
+
+      <!-- Start Screen -->
+      <div id="start-screen">
+        <div class="start-content">
+          <h1 class="game-title">ZOMBIE<br>ELEVATOR</h1>
+          <p class="game-subtitle">SURVIVE 10 FLOORS OF UNDEAD HORROR</p>
+          <button id="start-btn">START GAME</button>
+          <div class="controls-info">
+            <p>🖱️ MOUSE to AIM | CLICK to SHOOT</p>
+            <p>SPACE to SHOOT | P to PAUSE | R to RESTART</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Reward Screen -->
+      <div id="reward-screen" class="hidden">
+        <div class="reward-content">
+          <h2 id="reward-title">FLOOR CLEARED!</h2>
+          <div id="reward-stats"></div>
+          <div id="reward-upgrades"></div>
+          <button id="reward-continue-btn">NEXT FLOOR</button>
+        </div>
+      </div>
+
+      <!-- Game Over Screen -->
+      <div id="gameover-screen" class="hidden">
+        <div class="gameover-content">
+          <h1 class="gameover-title">GAME OVER</h1>
+          <p id="gameover-floor">You reached Floor 1</p>
+          <p id="gameover-score">Final Score: 0</p>
+          <button id="gameover-restart-btn">TRY AGAIN</button>
+        </div>
+      </div>
+
+      <!-- Victory Screen -->
+      <div id="victory-screen" class="hidden">
+        <div class="victory-content">
+          <h1 class="victory-title">🏆 SURVIVED! 🏆</h1>
+          <p class="victory-sub">You cleared all 10 floors!</p>
+          <p id="victory-score">Final Score: 0</p>
+          <p id="victory-accuracy">Accuracy: 0%</p>
+          <p id="victory-headshots">Headshots: 0</p>
+          <button id="victory-restart-btn">PLAY AGAIN</button>
+        </div>
+      </div>
+
+      <!-- Pause Screen -->
+      <div id="pause-screen" class="hidden">
+        <div class="pause-content">
+          <h2>PAUSED</h2>
+          <button id="pause-resume-btn">RESUME</button>
+          <button id="pause-restart-btn">RESTART</button>
+        </div>
+      </div>
+
+      <!-- Floating Damage Texts Container -->
+      <div id="damage-texts"></div>
+
+      <!-- Hit Effects Container -->
+      <div id="hit-effects"></div>
+    </div>
+  </div>
+
+  <script>
+    window.addEventListener('error', (event) => {
+      const box = document.getElementById('debug-error');
+      if (!box) return;
+      box.style.display = 'block';
+      box.textContent = `Runtime error: ${event.message}\n${event.filename}:${event.lineno}`;
+    });
+
+    const debugBox = document.getElementById('debug-error');
+
+    function showDebug(message) {
+      if (!debugBox) return;
+      debugBox.style.display = 'block';
+      debugBox.textContent = message;
+    }
+
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = resolve;
+        script.onerror = () => reject(new Error(`Failed to load script: ${src}`));
+        document.body.appendChild(script);
+      });
+    }
+
+    async function loadThreeLocal() {
+      try {
+        const threeModule = await import('./node_modules/three/build/three.module.min.js');
+        window.THREE = threeModule;
+      } catch (error) {
+        throw new Error(`Failed to import local Three.js: ${error.message}`);
+      }
+    }
+
+    async function bootGame() {
+      try {
+        await loadThreeLocal();
+
+        if (!window.THREE) {
+          throw new Error('Local Three.js loaded but window.THREE is unavailable.');
+        }
+
+        await loadScript('GameObject3D.js');
+        await loadScript('Zombie.js');
+        await loadScript('ElevatorDoor.js');
+        await loadScript('Corridor.js');
+        await loadScript('InputManager.js');
+        await loadScript('UIManager.js');
+        await loadScript('Game.js');
+
+        const game = new Game();
+        window.game = game;
+        game.start();
+      } catch (error) {
+        showDebug(`Startup error: ${error.message}`);
+        console.error(error);
+      }
+    }
+
+    bootGame();
+  </script>
+</body>
+</html>
