@@ -67,27 +67,27 @@ These screenshots are currently stored in the sibling `Screenshots` folder in th
 
 ### Home Screen
 
-![Home Screen](../Screenshots/Home.png)
+![Home Screen](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/Home.png)
 
 ### Elevator Transition
 
-![Elevator Transition](../Screenshots/elevator.png)
+![Elevator Transition](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/elevator.png)
 
 ### Combat / Shooting
 
-![Combat](../Screenshots/shoot.png)
+![Combat](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/shoot.png)
 
 ### Kill Feedback
 
-![Kills](../Screenshots/kills.png)
+![Kills](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/kills.png)
 
 ### Reward Screen
 
-![Reward Screen](../Screenshots/reward.png)
+![Reward Screen](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/reward.png)
 
 ### Game Over Screen
 
-![Game Over](../Screenshots/game%20over.png)
+![Game Over](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/game%20over.png)
 
 ## Gameplay
 
