@@ -10,6 +10,36 @@ Watch the gameplay demo here:
 
 [Zombie Elevator Demo Video](https://drive.google.com/file/d/117aHkN-X43rR5CV8HRHZ4IY7ApCSRLkk/view?usp=drive_link)
 
+## Screenshots
+
+These screenshots are currently stored in the sibling `Screenshots` folder in the workspace.
+
+### Home Screen
+
+![Home Screen](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/Home.png)
+
+### Elevator Transition
+
+![Elevator Transition](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/elevator.png)
+
+### Combat / Shooting
+
+![Combat](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/shoot.png)
+
+### Kill Feedback
+
+![Kills](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/kills.png)
+
+### Reward Screen
+
+![Reward Screen](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/reward.png)
+
+### Game Over Screen
+
+![Game Over](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/game%20over.png)
+
+## Gameplay
+
 ## Overview
 
 `Zombie Elevator` is a 3D survival game where you fight waves of zombies inside a dark corridor/elevator-themed environment. The game combines:
@@ -61,35 +91,7 @@ Zombie Game/
     └── pause.wav
 ```
 
-## Screenshots
 
-These screenshots are currently stored in the sibling `Screenshots` folder in the workspace.
-
-### Home Screen
-
-![Home Screen](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/Home.png)
-
-### Elevator Transition
-
-![Elevator Transition](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/elevator.png)
-
-### Combat / Shooting
-
-![Combat](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/shoot.png)
-
-### Kill Feedback
-
-![Kills](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/kills.png)
-
-### Reward Screen
-
-![Reward Screen](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/reward.png)
-
-### Game Over Screen
-
-![Game Over](https://github.com/Ris-9/Gesture-based-shooting-game/blob/main/Screenshots/game%20over.png)
-
-## Gameplay
 
 You start at the lobby/start screen and enter the game by pressing `START GAME`.
 
