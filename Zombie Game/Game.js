@@ -72,6 +72,9 @@ class Game {
     this.grenadeHolding = false;
     this.grenadeProjectile = null;
 
+    // Sound system
+    this.soundManager = new SoundManager();
+
     this.isRunning = false;
     this.isPlaying = false;
     this.isPaused = false;
@@ -304,6 +307,10 @@ class Game {
     this.isVictory = false;
     this.isPaused = false;
 
+    // Initialize sound system
+    this.soundManager.init();
+    this.soundManager.resume();
+
     this.startFloor(this.currentFloor);
   }
 
@@ -314,6 +321,10 @@ class Game {
     this.ui.hideRewardScreen();
     this.ui.hidePause();
     this.ui.hideElevator();
+    
+    // Stop all sounds before restarting
+    this.soundManager.stopAllSounds();
+    
     this.startGame();
   }
 
@@ -396,6 +407,9 @@ class Game {
     this.ui.screenShake(false);
     this.gunRecoilOffset = 0.15;
 
+    // Sound feedback
+    this.soundManager.play('gunshot', 0.7);
+
     // Raycast from screen position
     const mouseNDC = new THREE.Vector2(
       (this.input.aimX / window.innerWidth) * 2 - 1,
@@ -447,6 +461,9 @@ class Game {
           this.ui.screenShake(true);
           this.ui.pulseCombo();
 
+          // Sound feedback
+          this.soundManager.play('enemykill', 0.8);
+
         } else {
           // BODY SHOT
           const killed = zombie.takeDamage(this.weaponDamage, false);
@@ -467,6 +484,9 @@ class Game {
             this.ui.showHitEffect(sx, sy, true);
             this.ui.screenShake(true);
             this.ui.pulseCombo();
+
+            // Sound feedback
+            this.soundManager.play('enemykill', 0.8);
           } else {
             const pts = Game.SCORE_BODY_HIT;
             this.score += pts;
@@ -591,6 +611,10 @@ class Game {
         this.ui.screenShake(true);
         this.ui.pulseCombo();
         this.ui.showGrenadeEffect(sx, sy);
+
+        // Sound feedback
+        this.soundManager.play('explosion', 1.0);
+        this.soundManager.play('enemykill', 0.6);
       } else {
         this.ui.showDamageText(window.innerWidth / 2, window.innerHeight / 2 - 60, 'NO TARGET!', 'bodyshot');
       }
@@ -688,6 +712,10 @@ class Game {
     this.isGameOver = true;
     this.isPlaying = false;
     this.floorActive = false;
+    
+    // Sound feedback
+    this.soundManager.play('gameover', 1.0);
+    
     this.ui.showGameOver(this.currentFloor, this.score);
   }
 
