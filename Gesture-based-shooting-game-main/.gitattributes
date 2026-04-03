@@ -1,0 +1,41 @@
+# ----------------------------
+# Python files → always LF
+# ----------------------------
+*.py text eol=lf
+
+# ----------------------------
+# Frontend / JS / JSX / CSS / HTML → default OS line endings
+# ----------------------------
+*.js text
+*.jsx text
+*.ts text
+*.tsx text
+*.css text
+*.scss text
+*.html text
+*.json text
+
+# ----------------------------
+# Markdown / text files → normalize
+# ----------------------------
+*.md text
+*.txt text
+*.yml text
+*.yaml text
+
+# ----------------------------
+# Images and binaries → mark as binary
+# ----------------------------
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.pdf binary
+*.zip binary
+
+# ----------------------------
+# Ignore virtual environment folders (optional, but recommended)
+# ----------------------------
+gesture_env/ binary
+venv/ binary
