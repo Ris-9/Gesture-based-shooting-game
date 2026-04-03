@@ -68,6 +68,9 @@ class Game {
     this.floorKills = 0;
     this.floorScore = 0;
     this.fireCooldown = 0;
+    this.grenadeCount = 0;
+    this.grenadeHolding = false;
+    this.grenadeProjectile = null;
 
     this.isRunning = false;
     this.isPlaying = false;
@@ -147,6 +150,9 @@ class Game {
     // Gun model (simple)
     this.createGunModel();
 
+    // Grenade model (Three.js primitives, hidden by default)
+    this.createGrenadeModel();
+
     // Setup button handlers
     this.setupButtons();
 
@@ -189,6 +195,63 @@ class Game {
     this.scene.add(this.camera);
 
     this.gunRecoilOffset = 0;
+  }
+
+  createGrenadeModel() {
+    this.grenadeGroup = new THREE.Group();
+
+    // Main body - classic pineapple grenade sphere
+    const bodyGeo = new THREE.SphereGeometry(0.09, 10, 10);
+    const bodyMat = new THREE.MeshLambertMaterial({ color: 0x4a5e2a });
+    const body = new THREE.Mesh(bodyGeo, bodyMat);
+    this.grenadeGroup.add(body);
+
+    // Horizontal band
+    const bandHGeo = new THREE.TorusGeometry(0.092, 0.008, 6, 14);
+    const bandMat = new THREE.MeshLambertMaterial({ color: 0x2a3a12 });
+    const bandH = new THREE.Mesh(bandHGeo, bandMat);
+    bandH.rotation.x = Math.PI / 2;
+    this.grenadeGroup.add(bandH);
+
+    // Vertical band
+    const bandVGeo = new THREE.TorusGeometry(0.092, 0.008, 6, 14);
+    const bandV = new THREE.Mesh(bandVGeo, bandMat);
+    this.grenadeGroup.add(bandV);
+
+    // Top collar
+    const collarGeo = new THREE.CylinderGeometry(0.032, 0.04, 0.025, 10);
+    const collarMat = new THREE.MeshLambertMaterial({ color: 0x888888 });
+    const collar = new THREE.Mesh(collarGeo, collarMat);
+    collar.position.set(0, 0.1, 0);
+    this.grenadeGroup.add(collar);
+
+    // Fuse on top
+    const fuseGeo = new THREE.CylinderGeometry(0.006, 0.006, 0.055, 6);
+    const fuseMat = new THREE.MeshLambertMaterial({ color: 0x111111 });
+    const fuse = new THREE.Mesh(fuseGeo, fuseMat);
+    fuse.position.set(0, 0.145, 0);
+    this.grenadeGroup.add(fuse);
+
+    // Safety lever on side
+    const leverGeo = new THREE.BoxGeometry(0.012, 0.1, 0.018);
+    const leverMat = new THREE.MeshLambertMaterial({ color: 0x999977 });
+    const lever = new THREE.Mesh(leverGeo, leverMat);
+    lever.position.set(0.1, 0.01, 0);
+    lever.rotation.z = 0.15;
+    this.grenadeGroup.add(lever);
+
+    // Safety pin ring
+    const pinGeo = new THREE.TorusGeometry(0.018, 0.005, 6, 10);
+    const pinMat = new THREE.MeshLambertMaterial({ color: 0xcccccc });
+    const pin = new THREE.Mesh(pinGeo, pinMat);
+    pin.position.set(0.1, 0.055, 0);
+    pin.rotation.z = Math.PI / 2;
+    this.grenadeGroup.add(pin);
+
+    this.grenadeGroup.position.set(0.28, -0.28, -0.52);
+    this.grenadeGroup.rotation.set(0.2, 0.3, 0.15);
+    this.grenadeGroup.visible = false;
+    this.camera.add(this.grenadeGroup);
   }
 
   setupButtons() {
@@ -234,6 +297,7 @@ class Game {
     this.totalShots = 0;
     this.totalHits = 0;
     this.totalHeadshots = 0;
+    this.grenadeCount = 0;
     this.isPlaying = true;
     this.isRunning = true;
     this.isGameOver = false;
@@ -244,7 +308,6 @@ class Game {
   }
 
   restartGame() {
-    // Clean up zombies
     this.clearZombies();
     this.ui.hideGameOver();
     this.ui.hideVictory();
@@ -263,16 +326,17 @@ class Game {
     this.floorKills = 0;
     this.floorScore = 0;
 
-    // Close elevator door
+    // Give grenades from floor 1 onwards (+2 per floor, max 5)
+    if (floor >= 1) {
+      this.grenadeCount = Math.min(this.grenadeCount + 2, 5);
+    }
+
     this.elevatorDoor.close();
 
-    // Show elevator transition
     this.ui.showElevator(floor, () => {
-      // Elevator arrived, open 3D doors too
       this.elevatorDoor.open();
       this.inElevator = false;
 
-      // Spawn zombies after a brief delay
       setTimeout(() => {
         this.spawnZombies(floor);
         this.floorActive = true;
@@ -429,10 +493,113 @@ class Game {
     }
   }
 
+  setGrenadeHolding(holding) {
+    if (this.currentFloor < 1 || this.grenadeCount <= 0 || this.grenadeProjectile) {
+      if (this.gunGroup) this.gunGroup.visible = true;
+      if (this.grenadeGroup) this.grenadeGroup.visible = false;
+      return;
+    }
+    this.grenadeHolding = holding;
+    if (this.gunGroup) this.gunGroup.visible = !holding;
+    if (this.grenadeGroup) this.grenadeGroup.visible = holding;
+  }
+
+  throwGrenade() {
+    if (!this.floorActive || this.inElevator || this.inReward) return;
+    if (this.currentFloor < 1) return;
+    if (this.grenadeCount <= 0) return;
+    if (this.grenadeProjectile) return;
+
+    this.grenadeCount--;
+    // Hide grenade from hand, show gun
+    if (this.grenadeGroup) this.grenadeGroup.visible = false;
+    if (this.gunGroup) this.gunGroup.visible = true;
+    this.grenadeHolding = false;
+
+    // Find nearest alive zombie
+    let nearestZombie = null;
+    let nearestDist = Infinity;
+    for (const z of this.zombies) {
+      if (!z.alive || z.dying) continue;
+      const dist = z.position.distanceTo(this.camera.position);
+      if (dist < nearestDist) {
+        nearestDist = dist;
+        nearestZombie = z;
+      }
+    }
+
+    // Build flying projectile
+    const projGeo = new THREE.SphereGeometry(0.09, 8, 8);
+    const projMat = new THREE.MeshLambertMaterial({ color: 0x4a5e2a });
+    const projMesh = new THREE.Mesh(projGeo, projMat);
+
+    const startPos = new THREE.Vector3();
+    this.camera.getWorldPosition(startPos);
+    startPos.y -= 0.25;
+    const forward = new THREE.Vector3();
+    this.camera.getWorldDirection(forward);
+    startPos.addScaledVector(forward, 0.5);
+    projMesh.position.copy(startPos);
+    this.scene.add(projMesh);
+
+    const targetPos = nearestZombie
+      ? nearestZombie.position.clone().add(new THREE.Vector3(0, 1, 0))
+      : startPos.clone().addScaledVector(forward, 12);
+
+    this.grenadeProjectile = {
+      mesh: projMesh,
+      startPos: startPos.clone(),
+      targetPos,
+      elapsed: 0,
+      duration: 0.55,
+      zombie: nearestZombie
+    };
+  }
+
+  _updateGrenadeProjectile(dt) {
+    if (!this.grenadeProjectile) return;
+    const p = this.grenadeProjectile;
+    p.elapsed += dt;
+    const t = Math.min(p.elapsed / p.duration, 1);
+
+    const pos = new THREE.Vector3().lerpVectors(p.startPos, p.targetPos, t);
+    pos.y += Math.sin(t * Math.PI) * 1.8;
+    p.mesh.position.copy(pos);
+    p.mesh.rotation.x += dt * 12;
+    p.mesh.rotation.z += dt * 8;
+
+    if (t >= 1) {
+      this.scene.remove(p.mesh);
+      this.grenadeProjectile = null;
+
+      if (p.zombie && p.zombie.alive && !p.zombie.dying) {
+        const screenPos = p.zombie.getScreenPosition(this.camera);
+        const sx = screenPos ? screenPos.x : window.innerWidth / 2;
+        const sy = screenPos ? screenPos.y : window.innerHeight / 2;
+
+        p.zombie.takeDamage(9999, false);
+        this.floorKills++;
+
+        const pts = 150 + this.combo * Game.SCORE_COMBO_MULTIPLIER;
+        this.score += pts;
+        this.floorScore += pts;
+        this.combo++;
+        this.comboTimer = Game.COMBO_TIMEOUT;
+
+        this.ui.showDamageText(sx, sy - 30, '\ud83d\udca3 GRENADE!', 'headshot');
+        this.ui.showDamageText(sx + 20, sy + 10, '+' + pts, 'kill');
+        this.ui.screenShake(true);
+        this.ui.pulseCombo();
+        this.ui.showGrenadeEffect(sx, sy);
+      } else {
+        this.ui.showDamageText(window.innerWidth / 2, window.innerHeight / 2 - 60, 'NO TARGET!', 'bodyshot');
+      }
+    }
+  }
+
   checkFloorComplete() {
     if (!this.floorActive) return;
 
-    // Check if any zombies reached the player
     for (const z of this.zombies) {
       if (z.reachedPlayer && z.alive) {
         z.alive = false;
@@ -451,7 +618,6 @@ class Game {
       }
     }
 
-    // Check if all zombies are dead or gone
     const allDone = this.zombies.every(z => !z.alive && !z.dying);
     const allSpawned = this.zombies.every(z => z.spawned);
 
@@ -459,15 +625,12 @@ class Game {
       this.floorActive = false;
       this.elevatorDoor.close();
 
-      // Floor clear bonus
       const clearBonus = Game.SCORE_FLOOR_CLEAR;
       this.score += clearBonus;
       this.floorScore += clearBonus;
 
-      // Weapon progression bonus
       this.weaponDamage += Game.FLOOR_CLEAR_DAMAGE_BONUS;
 
-      // Show reward screen after a brief delay
       setTimeout(() => {
         this.showReward();
       }, 800);
@@ -483,7 +646,6 @@ class Game {
 
     const upgrades = [];
 
-    // Headshot bonus
     if (this.floorHeadshots > 0) {
       upgrades.push({
         label: 'HEADSHOT BONUS',
@@ -491,7 +653,6 @@ class Game {
       });
     }
 
-    // Accuracy bonus
     if (accuracy >= 80) {
       const accBonus = 0.3;
       this.weaponDamage += accBonus;
@@ -501,7 +662,6 @@ class Game {
       });
     }
 
-    // Floor clear
     upgrades.push({
       label: 'FLOOR CLEARED',
       value: `+${Game.FLOOR_CLEAR_DAMAGE_BONUS.toFixed(1)} DMG`
@@ -514,10 +674,9 @@ class Game {
       floorScore: this.floorScore,
       upgrades: upgrades
     });
-    
-    // Auto-continue to next floor after 2 seconds
+
     setTimeout(() => {
-      if (this.inReward) {  // Only if still in reward state
+      if (this.inReward) {
         this.ui.hideRewardScreen();
         this.inReward = false;
         this.nextFloor();
@@ -608,9 +767,22 @@ class Game {
       this.ui.showDangerOverlay(danger > 0.7 && this.floorActive);
     }
 
-    // Handle shooting during active floor
+    // Animate flying grenade projectile
+    this._updateGrenadeProjectile(dt);
+
+    // Grenade idle bob when held
+    if (this.grenadeGroup && this.grenadeGroup.visible) {
+      const bob = Math.sin(Date.now() * 0.005) * 0.012;
+      this.grenadeGroup.position.y = -0.28 + bob;
+      this.grenadeGroup.rotation.y = 0.3 + Math.sin(Date.now() * 0.003) * 0.08;
+    }
+
+    // Handle shooting and grenades during active floor
     if (this.floorActive && !this.inElevator && !this.inReward) {
       this.handleShooting(dt);
+      if (this.input.isKeyJustPressed('KeyG')) {
+        this.throwGrenade();
+      }
     }
 
     // Update entities
