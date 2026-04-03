@@ -570,3 +570,78 @@ body, html {
 .screen-shake-heavy {
   animation: shake 0.3s ease-in-out;
 }
+
+/* Grenade Indicator */
+#grenade-indicator {
+  position: absolute; bottom: 2vh; right: 2vw;
+  display: flex; flex-direction: column; align-items: center; gap: 0.3vh;
+  background: rgba(0,0,0,0.7); border: 2px solid #ff8800;
+  border-radius: 8px; padding: 1vh 1.2vw;
+  z-index: 20; pointer-events: none;
+  box-shadow: 0 0 12px #ff880066;
+  transition: opacity 0.3s, border-color 0.3s;
+}
+
+#grenade-icon {
+  font-size: 3.5vh; line-height: 1;
+  animation: grenadeFloat 2s ease-in-out infinite;
+}
+
+@keyframes grenadeFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-3px); }
+}
+
+#grenade-count-display {
+  font-size: 2.4vh; font-weight: 900; color: #ff8800;
+  text-shadow: 0 0 10px #ff880099;
+}
+
+#grenade-label {
+  font-size: 1.1vh; color: #aaa; letter-spacing: 0.15em;
+}
+
+#grenade-gesture-hint {
+  font-size: 1.4vh; color: #666; margin-top: 0.2vh;
+}
+
+#grenade-indicator.empty {
+  border-color: #444; opacity: 0.5;
+}
+
+#grenade-indicator.empty #grenade-icon {
+  filter: grayscale(1);
+  animation: none;
+}
+
+#grenade-indicator.empty #grenade-count-display {
+  color: #666; text-shadow: none;
+}
+
+/* Grenade explosion particle */
+.hit-spark.grenade-explosion {
+  width: 18px; height: 18px;
+  background: radial-gradient(circle, #fff 0%, #ffdd00 30%, #ff6600 70%, transparent 100%);
+  border-radius: 50%;
+  animation: grenadeSparkBurst 0.7s ease-out forwards;
+}
+
+@keyframes grenadeSparkBurst {
+  0%   { transform: scale(0.3); opacity: 1; }
+  60%  { transform: scale(2.5); opacity: 0.8; }
+  100% { transform: scale(4);   opacity: 0; }
+}
+
+/* Orange screen flash on grenade throw */
+@keyframes grenadeFlash {
+  0%   { opacity: 0.45; }
+  100% { opacity: 0; }
+}
+
+#gameContainer.grenade-flash::after {
+  content: '';
+  position: absolute; inset: 0;
+  background: rgba(255, 120, 0, 0.45);
+  pointer-events: none; z-index: 50;
+  animation: grenadeFlash 0.18s ease-out forwards;
+}
